@@ -6,6 +6,10 @@ type Message = {
   role: "user" | "ai";
   content: string;
 };
+const extractUrls = (input: string): string[] => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g; // Matches http:// or https:// followed by non-whitespace characters
+  return input.match(urlRegex) || [];
+};
 
 export default function Home() {
   const [message, setMessage] = useState("");
@@ -22,18 +26,21 @@ export default function Home() {
     setMessages(prev => [...prev, userMessage]);
     setMessage("");
     setIsLoading(true);
-
+    const urls = extractUrls(message);
+    const url = urls[0];
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ query: message, url: url }),
       });
 
       // TODO: Handle the response from the chat API to display the AI response in the UI
-
+      const data = await response.json();
+      const aiResponse = { role: "ai" as const, content: data.response };
+      setMessages(prev => [...prev, aiResponse]);
 
 
 
@@ -62,18 +69,16 @@ export default function Home() {
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex gap-4 mb-4 ${
-                msg.role === "ai"
-                  ? "justify-start"
-                  : "justify-end flex-row-reverse"
-              }`}
+              className={`flex gap-4 mb-4 ${msg.role === "ai"
+                ? "justify-start"
+                : "justify-end flex-row-reverse"
+                }`}
             >
               <div
-                className={`px-4 py-2 rounded-2xl max-w-[80%] ${
-                  msg.role === "ai"
-                    ? "bg-gray-800 border border-gray-700 text-gray-100"
-                    : "bg-cyan-600 text-white ml-auto"
-                }`}
+                className={`px-4 py-2 rounded-2xl max-w-[80%] ${msg.role === "ai"
+                  ? "bg-gray-800 border border-gray-700 text-gray-100"
+                  : "bg-cyan-600 text-white ml-auto"
+                  }`}
               >
                 {msg.content}
               </div>
