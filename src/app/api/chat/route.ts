@@ -3,8 +3,6 @@ import type { NextRequest } from "next/server";
 import Groq from "groq-sdk";
 import * as cheerio from "cheerio";
 import puppeteer from "puppeteer";
-
-
 import clonedeep from 'lodash.clonedeep';
 // Initialize Groq with API key
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });

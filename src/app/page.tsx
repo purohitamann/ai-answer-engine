@@ -6,6 +6,7 @@ type Message = {
   role: "user" | "ai";
   content: string;
 };
+
 const extractUrls = (input: string): string[] => {
   const urlRegex = /(https?:\/\/[^\s]+)/g; // Matches http:// or https:// followed by non-whitespace characters
   return input.match(urlRegex) || [];
@@ -28,6 +29,7 @@ export default function Home() {
     setIsLoading(true);
     const urls = extractUrls(message);
     const url = urls[0];
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -37,47 +39,45 @@ export default function Home() {
         body: JSON.stringify({ query: message, url: url }),
       });
 
-      // TODO: Handle the response from the chat API to display the AI response in the UI
+      if (response.status === 429) {
+        // Rate limit reached, redirect user to /blocked
+        window.location.href = "/blocked";
+        return;
+      }
+
       const data = await response.json();
       const aiResponse = { role: "ai" as const, content: data.response };
       setMessages(prev => [...prev, aiResponse]);
-
-
-
     } catch (error) {
-      console.error("Error:", error);
+      console.log("Error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-
-  // TODO: Modify the color schemes, fonts, and UI as needed for a good user experience
-  // Refer to the Tailwind CSS docs here: https://tailwindcss.com/docs/customizing-colors, and here: https://tailwindcss.com/docs/hover-focus-and-other-states
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
+    <div className="flex flex-col h-screen bg-gradient-to-b from-gray-900 to-gray-950 font-sans text-base">
       {/* Header */}
-      <div className="w-full bg-gray-800 border-b border-gray-700 p-4">
+      <div className="w-full bg-gray-800/70 border-b border-gray-700 p-4 shadow-md backdrop-blur-sm">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-xl font-semibold text-white">Chat</h1>
+          <h1 className="text-xl font-semibold text-gray-100 tracking-wide">
+            AI Chat Assistant
+          </h1>
         </div>
       </div>
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto pb-32 pt-4">
-        <div className="max-w-3xl mx-auto px-4">
+        <div className="max-w-3xl mx-auto px-4 space-y-4">
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex gap-4 mb-4 ${msg.role === "ai"
-                ? "justify-start"
-                : "justify-end flex-row-reverse"
-                }`}
+              className={`flex gap-4 ${msg.role === "ai" ? "justify-start" : "justify-end"} ${msg.role === "user" ? "flex-row-reverse" : ""}`}
             >
               <div
-                className={`px-4 py-2 rounded-2xl max-w-[80%] ${msg.role === "ai"
+                className={`px-4 py-2 rounded-2xl max-w-[80%] shadow-md ${msg.role === "ai"
                   ? "bg-gray-800 border border-gray-700 text-gray-100"
-                  : "bg-cyan-600 text-white ml-auto"
+                  : "bg-cyan-600 text-white"
                   }`}
               >
                 {msg.content}
@@ -85,22 +85,20 @@ export default function Home() {
             </div>
           ))}
           {isLoading && (
-            <div className="flex gap-4 mb-4">
-              <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center">
+            <div className="flex gap-4 mb-4 items-center">
+              <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-700">
                 <svg
-                  className="w-5 h-5 text-gray-400"
+                  className="w-5 h-5 text-gray-400 animate-spin"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-4-8c.79 0 1.5-.71 1.5-1.5S8.79 9 8 9s-1.5.71-1.5 1.5S7.21 11 8 11zm8 0c.79 0 1.5-.71 1.5-1.5S16.79 9 16 9s-1.5.71-1.5 1.5.71 1.5 1.5 1.5zm-4 4c2.21 0 4-1.79 4-4h-8c0 2.21 1.79 4 4 4z" />
+                  <path d="M12 22c5.421 0 10-4.579 10-10s-4.579-10-10-10c-3.191 0-6.059 1.561-7.912 4H4.5C5.964 3.486 8.788 2 12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10c-3.212 0-6.036-1.486-7.5-4h1.588C5.941 20.439 8.809 22 12 22z" />
                 </svg>
               </div>
-              <div className="px-4 py-2 rounded-2xl bg-gray-800 border border-gray-700 text-gray-100">
-                <div className="flex items-center gap-1">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                </div>
+              <div className="px-4 py-2 rounded-2xl bg-gray-800 border border-gray-700 text-gray-100 flex items-center gap-1">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
               </div>
             </div>
           )}
@@ -108,7 +106,7 @@ export default function Home() {
       </div>
 
       {/* Input Area */}
-      <div className="fixed bottom-0 w-full bg-gray-800 border-t border-gray-700 p-4">
+      <div className="fixed bottom-0 w-full bg-gray-900/80 border-t border-gray-700 p-4 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto">
           <div className="flex gap-3 items-center">
             <input
@@ -117,7 +115,7 @@ export default function Home() {
               onChange={e => setMessage(e.target.value)}
               onKeyPress={e => e.key === "Enter" && handleSend()}
               placeholder="Type your message..."
-              className="flex-1 rounded-xl border border-gray-700 bg-gray-900 px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder-gray-400"
+              className="flex-1 rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent placeholder-gray-400 transition-all"
             />
             <button
               onClick={handleSend}
@@ -126,6 +124,11 @@ export default function Home() {
             >
               {isLoading ? "Sending..." : "Send"}
             </button>
+            {/* <input type="text" value={`https://yourdomain.com/chat/${conversationId}`} readOnly />
+            <button onClick={() => navigator.clipboard.writeText(`https://yourdomain.com/chat/${conversationId}`)}>
+              Copy Link
+            </button> */}
+
           </div>
         </div>
       </div>
